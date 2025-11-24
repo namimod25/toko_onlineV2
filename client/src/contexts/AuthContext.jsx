@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }) => {
         name: userData.name,
         email: userData.email,
         password: userData.password,
+        confirmPassword: userData.confirmPassword,
         role: 'CUSTOMER' // Default role
       })
 
