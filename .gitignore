@@ -1,0 +1,7 @@
+#modules
+.continue
+.vscode
+node_modules
+
+#other
+package-lock.json
