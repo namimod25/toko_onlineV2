@@ -5,6 +5,7 @@ import { registerSchema, loginSchema } from '../middleware/validation.js';
 import z from 'zod';
 import { logAudit, AUDIT_ACTIONS } from '../utils/auditLogger.js';
 
+
 export const register = async (req, res) => {
   try {
     const validatedData = registerSchema.parse(req.body);
@@ -14,14 +15,6 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      await logAudit(
-        AUDIT_ACTIONS.REGISTER,
-        null,
-        validatedData.email,
-        'Registration failed - user already exists',
-        req.ip,
-        req.get('User-Agent')
-      );
       return res.status(400).json({ error: 'User already exists' });
     }
 
@@ -32,7 +25,6 @@ export const register = async (req, res) => {
         name: validatedData.name,
         email: validatedData.email,
         password: hashedPassword,
-        confirmPassword: validatedData.password,
         role: validatedData.role
       }
     });
@@ -44,30 +36,11 @@ export const register = async (req, res) => {
       role: user.role
     };
 
-    // Audit log successful register
-    await logAudit(
-      AUDIT_ACTIONS.REGISTER,
-      user.id,
-      user.email,
-      'User registered successfully',
-      req.ip,
-      req.get('User-Agent')
-    );
-
     res.status(201).json({
       message: 'User created successfully',
       user: req.session.user
     });
   } catch (error) {
-    await logAudit(
-      AUDIT_ACTIONS.REGISTER,
-      null,
-      req.body.email,
-      `Registration error: ${error.message}`,
-      req.ip,
-      req.get('User-Agent')
-    );
-    
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
         error: 'Validation failed', 
@@ -76,7 +49,7 @@ export const register = async (req, res) => {
     }
     res.status(500).json({ error: 'Internal server error' });
   }
-};
+}
 
 export const login = async (req, res) => {
   try {

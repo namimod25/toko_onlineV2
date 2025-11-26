@@ -51,7 +51,7 @@ app.use(session({
 
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:3000/api',
   credentials: true
 }));
 app.use(express.json());
@@ -76,6 +76,28 @@ app.use((err, req, res, next) => {
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
+});
+
+app.get('api/status', async (req, res) => {
+ try {
+   const user = await prisma.user.findUnique({
+     where: { id: req.user.userId },
+     select: {
+       id: true,
+       name: true,
+       email: true,
+       role: true
+     }
+   });
+   
+   if (!user) {
+     return res.status(404).json({ error: 'User not found' });
+   }
+   
+   res.json({ user });
+ } catch (error) {
+   res.status(500).json({ error: 'Failed to get user info' });
+ }
 });
 
 // error handler route
