@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await axios.get('/api/auth/status')
+      const response = await axios.get('/status')
       if (response.data.authenticated) {
         setUser(response.data.user)
       }
@@ -42,28 +42,56 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const register = async (userData) => {
+  const register = async (user) => {
     try {
-      console.log('Registering user with data:', userData)
 
       const response = await axios.post('/api/register', {
         name: userData.name,
         email: userData.email,
         password: userData.password,
         confirmPassword: userData.confirmPassword,
-        role: 'CUSTOMER' // Default role
-      })
+        role: userData.role || 'CUSTOMER' 
+      },{
+        withCredentials: true
+      });
 
       console.log('Registration response:', response.data)
-      setUser(response.data.user)
+     
+      if(response.data.success){
+        setUser(response.data.user);
+        localStorage.setItem('token', response.data.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
 
-      return { success: true }
+        return{
+          success: true,
+          user: response.data.user
+        };
+      }else{
+        return{
+          success: false,
+          error: response.data.message || 'Registrasi failed'
+        };
+      }
     } catch (error) {
-      console.error('Registration error:', error)
+      
+
+      let errorMessage = 'Registrasi failedd';
+
+      if(error.response?.data?.message){
+        errorMessage = error.response.data.message;
+      }else if (error.response.data.error){
+        errorMessage = error.response.data.error;
+      }else if(error.response?.data?.details){
+        errorMessage = error.response.data.details[0]?.message || 'validation failed';
+      }else if (error.message){
+        errorMessage = error.message;
+      }
+
       return {
         success: false,
-        error: error.response?.data?.error || error.response?.data?.details?.[0]?.message || 'Registration failed'
-      }
+        error: errorMessage
+        
+      };
     }
   }
 
