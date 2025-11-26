@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data.user)
       }
     } catch (error) {
-      console.error('Auth status check failed:', error)
+      
     } finally {
       setLoading(false)
     }
