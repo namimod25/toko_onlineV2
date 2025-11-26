@@ -134,12 +134,3 @@ model Auditlog {
 
   @@map("audit_log")
 }
-
-model Captcha {
-  id String @id @default(cuid())
-  text String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@map("captchas")
-}
