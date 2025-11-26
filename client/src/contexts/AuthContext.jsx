@@ -3,6 +3,14 @@ import axios from 'axios'
 
 const AuthContext = createContext()
 
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -13,17 +21,42 @@ export const AuthProvider = ({ children }) => {
   })
 
   useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      
+      verifyToken()
+    } else {
+      setLoading(false)
+    }
     checkAuthStatus()
   }, [])
 
-  const checkAuthStatus = async () => {
+  const verifyToken = async () => {
     try {
-      const response = await axios.get('/status')
+      const response = await axios.get('/api/status')
+      if(response.data.authenticated){
+        setUser(response.data.user)
+      }else{
+        localStorage.removeItem('token')
+        delete axios.defaults.headers.common['Authorization']
+      }
+    } catch (error) {
+      localStorage.removeItem('token')
+      delete axios.defaults.headers.common['Authorization']
+    } finally {
+      setLoading(false)
+    }
+  }
+
+   const checkAuthStatus = async () => {
+    try {
+      const response = await axios.get('/api/status')
       if (response.data.authenticated) {
         setUser(response.data.user)
       }
     } catch (error) {
-      
+      console.error('Auth status check failed:', error)
     } finally {
       setLoading(false)
     }
@@ -32,66 +65,36 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/login', { email, password })
-      setUser(response.data.user)
+      const { token, user } = response.data
+      
+      localStorage.setItem('token', token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      setUser(user)
+      
       return { success: true }
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Login failed'
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Login failed' 
       }
     }
   }
 
-  const register = async (user) => {
+  const register = async (userData) => {
     try {
-
-      const response = await axios.post('/api/register', {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        confirmPassword: userData.confirmPassword,
-        role: userData.role || 'CUSTOMER' 
-      },{
-        withCredentials: true
-      });
-
-      console.log('Registration response:', response.data)
-     
-      if(response.data.success){
-        setUser(response.data.user);
-        localStorage.setItem('token', response.data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-        return{
-          success: true,
-          user: response.data.user
-        };
-      }else{
-        return{
-          success: false,
-          error: response.data.message || 'Registrasi failed'
-        };
-      }
-    } catch (error) {
+      const response = await axios.post('/api/register', userData)
+      const { token, user } = response.data
       
-
-      let errorMessage = 'Registrasi failedd';
-
-      if(error.response?.data?.message){
-        errorMessage = error.response.data.message;
-      }else if (error.response.data.error){
-        errorMessage = error.response.data.error;
-      }else if(error.response?.data?.details){
-        errorMessage = error.response.data.details[0]?.message || 'validation failed';
-      }else if (error.message){
-        errorMessage = error.message;
+      localStorage.setItem('token', token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      setUser(user)
+      
+      return { success: true }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Registration failed' 
       }
-
-      return {
-        success: false,
-        error: errorMessage
-        
-      };
     }
   }
 
@@ -100,42 +103,48 @@ export const AuthProvider = ({ children }) => {
       isLoggingOut: true,
       isSuccess: false,
       message: ''
-    })
-
+    });
     try {
-      await axios.post('/api/logout')
+      await axios.post('/api/logout');
 
       setLogoutState({
         isLoggingOut: false,
         isSuccess: true,
         message: '√ Logout successful'
-      })
+      });
 
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setUser(null);
 
-      setUser(null)
       setLogoutState({
         isLoggingOut: false,
         isSuccess: false,
         message: ''
-      })
-
+      });
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Logout error:', error);
+
+      // Show error for 2 seconds
       setLogoutState({
         isLoggingOut: false,
         isSuccess: false,
         message: 'Logout failed. Please try again.'
-      })
+      });
 
+      // Auto hide error after 2 seconds
       setTimeout(() => {
         setLogoutState({
           isLoggingOut: false,
           isSuccess: false,
           message: ''
-        })
-      }, 2000)
+        });
+      }, 2000);
     }
+
+    // cleanup
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
   }
 
   const value = {
@@ -143,8 +152,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loading,
-    logoutState
+    loading
   }
 
   return (
@@ -152,12 +160,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
 }

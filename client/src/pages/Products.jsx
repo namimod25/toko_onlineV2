@@ -40,7 +40,7 @@ const Products = () => {
     socket.on('product-created', (newProduct) => {
       console.log('New product created:', newProduct)
       setProducts(prev => {
-        // Cek apakah product sudah ada
+        
         const exists = prev.find(p => p.id === newProduct.id)
         if (!exists) {
           return [newProduct, ...prev]
@@ -141,7 +141,7 @@ const Products = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Our Products</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-6 md:mb-8 text-center md:text-left">Our Products</h1>
             <p className="text-gray-600 mt-2">
               Discover amazing products {realTimeLoading && '(Updating...)'}
             </p>
