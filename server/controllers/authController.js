@@ -15,7 +15,15 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+     await logAudit(
+      AUDIT_ACTIONS.REGISTER,
+      null,
+      validatedData.email,
+      'Register failed - user already exist',
+      req.ip,
+      req.get('user-agent')
+     )
+     return res.status(400).json({error: 'User already exist'});
     }
 
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
@@ -35,33 +43,82 @@ export const register = async (req, res) => {
       email: user.email,
       role: user.role
     };
+      await logAudit(
+        AUDIT_ACTIONS.REGISTER,
+        user.id,
+        user.email,
+        'User register succes',
+        req.ip,
+        req.get('user-Agent')
+      )
 
-    res.status(201).json({
+       res.status(201).json({
       message: 'User created successfully',
       user: req.session.user
     });
+    
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: error.errors 
-      });
+      await logAudit(
+        AUDIT_ACTIONS.REGISTER,
+        null,
+        req.body.email,
+        `Registration error: ${error.message}`,
+        req.ip,
+        req.get('User-agent')
+      )
+
+      if(error instanceof z.ZodError){
+        return res.status(400).json({
+          error: 'Validation failed',
+          detals: error.errors
+        });
+      }
+      res.status(500).json({ error: 'Internal server error' });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    
   }
 }
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const validatedData = loginSchema.parse(req.body);
 
-    
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email dan password harus diisi'
-      });
+    const userAgent = await prisma.user.findUnique({
+      where: {email: validatedData.email}
+    });
+
+     if (!userAgent || (await bcrypt.compare(validatedData.password, userAgent.password))) {
+      await logAudit(
+        AUDIT_ACTIONS.LOGIN_FAILED,
+        null,
+        validatedData.email,
+        'Invalid credential',
+        req.ip,
+        req.get('User-Agent')
+      )
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    req.session.userAgent = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    await logAudit(
+      AUDIT_ACTIONS.LOGIN,
+      user.id,
+      user.email,
+      'User berhasil login ',
+      req.ip,
+      req.get('User-agent')
+    )
+       res.json({
+      message: 'Login successful',
+      user: req.session.user
+    });
 
     
     try {
