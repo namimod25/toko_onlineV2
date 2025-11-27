@@ -14,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [logoutState, setLogoutState] = useState({
+  const [, setLogoutState] = useState({
     isLoggingOut: false,
     isSuccess: false,
     message: ''

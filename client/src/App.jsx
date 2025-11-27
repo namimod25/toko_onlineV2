@@ -1,6 +1,6 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider,useAuth } from './contexts/AuthContext'
 import Navbar from './components/Layout/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
@@ -34,13 +34,10 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path='forgot-password' element={<ForgotPassword />} />
               <Route path='reset-password' element={<ResetPassword />} />
-              <Route path="/products" element={<Products />} />
+              <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
               <Route path='/product-card' element={<ProductCard />} />
-              <Route path="/cart" element={ <Cart />}/>
+              <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>}/>
               <Route path="/profile" element={<Profile />} />
-              <Route path='/' element={<ProtectedRoute>
-                <Products/>
-              </ProtectedRoute>}/>
               <Route path='/admin/dashboard' element={<AdminDashboard />} />
               <Route path='/admin/hero-slide' element={<HeroSlides />} />
               <Route path='/admin/products' element={<AdminProducts />} />
@@ -48,6 +45,14 @@ function App() {
           </main>
         </div>
       </Router>
+    </AuthProvider>
+  )
+}
+
+function app(){
+  return(
+    <AuthProvider>
+      <App/>
     </AuthProvider>
   )
 }
