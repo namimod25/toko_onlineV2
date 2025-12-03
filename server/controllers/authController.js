@@ -82,137 +82,97 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const validatedData = loginSchema.parse(req.body);
+    console.log('Login attempt for email:', req.body.email)
+    
+    const validatedData = loginSchema.parse(req.body)
+    const { rememberMe = false } = req.body
 
-    const userAgent = await prisma.user.findUnique({
-      where: {email: validatedData.email}
-    });
+    const user = await prisma.user.findUnique({
+      where: { email: validatedData.email }
+    })
 
-     if (!userAgent || (await bcrypt.compare(validatedData.password, userAgent.password))) {
+    console.log('User found:', user ? 'Yes' : 'No')
+    
+    if (!user) {
+      console.log('User not found for email:', validatedData.email)
       await logAudit(
         AUDIT_ACTIONS.LOGIN_FAILED,
         null,
         validatedData.email,
-        'Invalid credential',
+        'User not found',
         req.ip,
         req.get('User-Agent')
       )
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    req.session.userAgent = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
+    console.log('Comparing password...')
+    const isPasswordValid = await bcrypt.compare(validatedData.password, user.password)
+    console.log('Password valid:', isPasswordValid)
 
-    await logAudit(
-      AUDIT_ACTIONS.LOGIN,
-      user.id,
-      user.email,
-      'User berhasil login ',
-      req.ip,
-      req.get('User-agent')
-    )
-       res.json({
-      message: 'Login successful',
-      user: req.session.user
-    });
-
-    
-    try {
-      loginSchema.parse({ email, password });
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validasi gagal',
-          errors: validationError.errors
-        });
-      }
-    }
-
-    
-    const user = await UserModel.findByEmail(email);
-    if (!user) {
-      await logAudit(
-        AUDIT_ACTIONS.LOGIN,
-        null,
-        email,
-        'Login failed - user not found',
-        req.ip,
-        req.get('User-Agent')
-      );
-      
-      return res.status(401).json({
-        success: false,
-        message: 'Email atau password salah'
-      });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('Invalid password for user:', validatedData.email)
       await logAudit(
-        AUDIT_ACTIONS.LOGIN,
+        AUDIT_ACTIONS.LOGIN_FAILED,
         user.id,
         user.email,
-        'Login failed - invalid password',
+        'Invalid password',
         req.ip,
         req.get('User-Agent')
-      );
-      
-      return res.status(401).json({
-        success: false,
-        message: 'Email atau password salah'
-      });
+      )
+      return res.status(401).json({ error: 'Invalid credentials' })
     }
 
+    
     req.session.user = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role
-    };
+    }
 
-    await logAudit(
-      AUDIT_ACTIONS.LOGIN,
-      user.id,
-      user.email,
-      'Login successful',
-      req.ip,
-      req.get('User-Agent')
-    );
+    if (rememberMe) {
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days
+    } else {
+      req.session.cookie.expires = false
+    }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Login berhasil',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
+    
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err)
+        return res.status(500).json({ error: 'Session error' })
       }
-    });
+
+      // Audit log success login
+      logAudit(
+        AUDIT_ACTIONS.LOGIN,
+        user.id,
+        user.email,
+        `User logged in successfully (Remember Me: ${rememberMe})`,
+        req.ip,
+        req.get('User-Agent')
+      )
+
+      console.log('Login successful for user:', user.email)
+      
+      res.json({
+        message: 'Login successful',
+        user: req.session.user
+      })
+    })
 
   } catch (error) {
-    console.error('Login error:', error);
-    
-    await logAudit(
-      AUDIT_ACTIONS.LOGIN,
-      null,
-      req.body.email,
-      `Login error: ${error.message}`,
-      req.ip,
-      req.get('User-Agent')
-    );
-    
-    return res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan server'
-    });
+    console.error('Login error:', error)
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: error.errors 
+      })
+    }
+    res.status(500).json({ error: 'Internal server error' })
   }
-};
+}
 
 export const logout = (req, res) => {
   // destroy
