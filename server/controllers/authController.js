@@ -91,7 +91,6 @@ export const login = async (req, res) => {
       where: { email: validatedData.email }
     })
 
-    console.log('User found:', user ? 'Yes' : 'No')
     
     if (!user) {
       console.log('User not found for email:', validatedData.email)
@@ -105,8 +104,7 @@ export const login = async (req, res) => {
       )
       return res.status(401).json({ error: 'Invalid credentials' })
     }
-
-    console.log('Comparing password...')
+    
     const isPasswordValid = await bcrypt.compare(validatedData.password, user.password)
     console.log('Password valid:', isPasswordValid)
 
