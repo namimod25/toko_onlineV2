@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await axios.get('/api/status')
+      const response = await axios.get('/api/auth/status')
       if(response.data.authenticated){
         setUser(response.data.user)
       }else{
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
 
    const checkAuthStatus = async () => {
     try {
-      const response = await axios.get('/api/status')
+      const response = await axios.get('/api/auth/status')
       if (response.data.authenticated) {
         setUser(response.data.user)
       }
