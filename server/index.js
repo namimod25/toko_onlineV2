@@ -38,13 +38,13 @@ const server = createServer(app);
 // Initialize socket.io
 initializeSocket(server);
 
-
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 app.use(session(sessionConfig));
+
 
 // Track visitor middleware
 app.use(trackVisitor);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { loginSchema } from '../../schemas/authSchema'
+import { RefreshCw, Volume2, Eye, EyeOff } from 'lucide-react';
 // import axios from 'axios'
 // import Captcha from '../components/Captcha'
 
@@ -49,12 +50,12 @@ const Login = () => {
       loginSchema.parse(formData)
       setErrors({})
 
-      // Login ke auth context
+      
       const result = await login(formData.email, formData.password)
 
       if (result.success) {
         setMessage('Login berhasil!')
-        // Redirect berdasarkan role atau ke halaman default
+      
         if (result.user?.role === 'ADMIN') {
           navigate('/')
         } else {
@@ -67,7 +68,7 @@ const Login = () => {
 
     } catch (error) {
       if (error.errors) {
-        //  validasi Zod
+       
         const newErrors = {}
         error.errors.forEach(err => {
           newErrors[err.path[0]] = err.message
