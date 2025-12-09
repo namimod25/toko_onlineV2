@@ -1,17 +1,24 @@
 import express from 'express';
 import { 
-  register, 
+  register,
   login, 
   logout, 
   getAuthStatus, 
   getProfile 
 } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
+import { loginSchema, validate } from '../middleware/validation.js';
+
 
 const router = express.Router();
 
 router.post('/register', register);
-router.post('/login', login);
+router.post('/login', 
+  validate(loginSchema),
+  login
+)
+//  router.post('/login', login);
+
 router.post('/logout', logout);
 router.get('/auth/status', getAuthStatus);
 router.get('/profile', requireAuth, getProfile);

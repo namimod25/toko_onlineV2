@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { UserModel } from '../models/User.js';
+// import { UserModel } from '../models/User.js';
 import prisma from '../utils/database.js';
 import { registerSchema, loginSchema } from '../middleware/validation.js';
 import z from 'zod';

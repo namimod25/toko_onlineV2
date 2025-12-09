@@ -14,7 +14,6 @@ import adminRoutes from './routes/admin.js';
 import landingRoutes from './routes/landing.js'
 import passwordRoutes from "./routes/password.js"
 
-
 // Import middleware
 import { trackVisitor } from './middleware/visitorTracker.js';
 import { logger } from './utils/logger.js';
@@ -56,7 +55,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/landing', landingRoutes);
 app.use('/api/password', passwordRoutes);
-
 // handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
