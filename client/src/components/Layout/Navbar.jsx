@@ -48,13 +48,11 @@ const Navbar = () => {
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex items-center space-x-2">
-                                <Link to="/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                                    Login
-                                </Link>
+                            <div className="flex items-center space-x-2">                                                                      
                                 <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
                                     Register
                                 </Link>
+                                
                                 {user && user.role === 'ADMIN' && (
                                     <Link to="/admin/dashboard" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                                         Admin Dashboard
@@ -63,7 +61,7 @@ const Navbar = () => {
                             </div>
                         )}
                     </div>
-
+                        
                     {/* Mobile menu button */}
                     <div className="md:hidden flex items-center">
                         <button

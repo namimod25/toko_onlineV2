@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider,useAuth } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Layout/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
@@ -16,6 +16,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import HeroSlides from './pages/admin/HeroSlides'
 import ResetPassword from './pages/ResetPassword'
 import ProductCard from './components/productCard'
+import Users from './pages/admin/Users'
 import './index.css'
 
 
@@ -41,6 +42,7 @@ function App() {
               <Route path='/admin/dashboard' element={<AdminDashboard />} />
               <Route path='/admin/hero-slide' element={<HeroSlides />} />
               <Route path='/admin/products' element={<AdminProducts />} />
+              <Route path='/admin/users' element={<Users />} />
             </Routes>
           </main>
         </div>
