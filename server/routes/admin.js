@@ -14,7 +14,7 @@ import {
   updateStock
 } from '../controllers/productController.js';
 import { getOrders, updateOrderStatus } from '../controllers/orderController.js';
-import { getUsers } from '../controllers/userController.js';
+import {  createUser, deleteUser, getUsers, updateUser, resetUserPassword } from '../controllers/userController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { validate, productSchema } from '../middleware/validation.js';
@@ -44,5 +44,8 @@ router.patch('/orders/:id/status', requireAuth, requireAdmin, updateOrderStatus)
 
 // User Management
 router.get('/users', requireAuth, requireAdmin, getUsers);
-
+router.post('/users', requireAuth, requireAdmin, createUser);
+router.put('/users/:id', requireAuth, requireAdmin, updateUser);
+router.delete("/users/:id", requireAuth, requireAdmin, deleteUser);
+router.post('/users/:id/reset-password', requireAuth, requireAdmin, resetUserPassword);
 export default router;
