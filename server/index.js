@@ -12,13 +12,16 @@ import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import adminRoutes from './routes/admin.js';
 import landingRoutes from './routes/landing.js'
+import wishlistRoutes from './routes/wishlist.js';
 import passwordRoutes from "./routes/password.js"
+import customerRoutes from './routes/customer.js';
 
 // Import middleware
 import { trackVisitor } from './middleware/visitorTracker.js';
 import { logger } from './utils/logger.js';
 import {createServer} from 'http';
 import { initializeSocket } from './socket/socket.js';
+import { getProfile } from './controllers/authController.js';
 
 
 dotenv.config();
@@ -54,7 +57,11 @@ app.use('/api/', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/landing', landingRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/password', passwordRoutes);
+app.use('/api/customer', customerRoutes);
+app.use('/api/profile', getProfile);
+
 // handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -8,18 +8,26 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String
-  role      Role     @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+   id          Int      @id @default(autoincrement())
+  email       String   @unique
+  name        String
+  password    String
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  postalCode  String?
+  role        Role     @default(CUSTOMER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
   @@map("users")
   orders    Order[]
   cartItems CartItem[]
   Auditlog Auditlog[]
+  profile UserProfile?
+  userOrders UserOrder[]
+  wishlist Wishlist[]
 }
 
 model Product {
@@ -35,6 +43,8 @@ model Product {
   
   cartItems CartItem[]
   orderItems OrderItem[]
+
+  wishlists Wishlist[]
 }
 
 model CartItem {
@@ -130,7 +140,53 @@ model Auditlog {
   userAgent String?
   createdAt DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("audit_log")
+}
+
+model UserProfile {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @unique
+  phone       String?
+  address     String?
+  city        String?
+  postalCode  String?
+  country     String?   @default("Indonesia")
+  avatar      String?
+  bio         String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model UserOrder {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  orderNumber String    @unique
+  total       Float
+  status      String
+  items       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("user_orders")
+}
+
+model Wishlist {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  productId   Int
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@map("wishlists")
 }

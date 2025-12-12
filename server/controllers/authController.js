@@ -211,12 +211,108 @@ export const getAuthStatus = (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.session.user.id },
-      select: { id: true, name: true, email: true, role: true, createdAt: true }
+      where: {id: req.session.user.id},
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        profile: {
+          select: {
+            phone: true,
+            address: true,
+            city: true,
+            postalCode: true,
+            country: true,
+            avatar: true
+          }
+        }
+      }
     });
-
-    res.json(user);
+    res.json(user)
   } catch (error) {
+    console.error('Error fetching profile:', error)
     res.status(500).json({ error: 'Failed to fetch user profile' });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email, phone, address, city, country, postalCode } = req.body
+
+    // Validate required fields
+    if (!name || !email || !phone || !address || !city || !country) {
+      return res.status(400).json({ error: 'All required fields must be filled' })
+    }
+
+    // Check if email is being changed and if it already exists
+    if (email !== req.session.user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      })
+
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email already exists' })
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.session.user.id },
+      data: {
+        name,
+        email,
+        phone,
+        address,
+        city,
+        country,
+        postalCode
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        address: true,
+        city: true,
+        country: true,
+        postalCode: true
+      }
+    })
+
+    // Update session with new email if changed
+    if (email !== req.session.user.email) {
+      req.session.user.email = email
+    }
+    req.session.user.name = name
+
+    // Audit log
+    await logAudit(
+      AUDIT_ACTIONS.PROFILE_UPDATE,
+      user.id,
+      user.email,
+      'Profile updated successfully',
+      req.ip,
+      req.get('User-Agent')
+    )
+
+    res.json({
+      message: 'Profile updated successfully',
+      user
+    })
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    
+    await logAudit(
+      AUDIT_ACTIONS.PROFILE_UPDATE,
+      req.session.user.id,
+      req.session.user.email,
+      `Profile update failed: ${error.message}`,
+      req.ip,
+      req.get('User-Agent')
+    )
+    
+    res.status(500).json({ error: 'Failed to update profile' })
+  }
+}
