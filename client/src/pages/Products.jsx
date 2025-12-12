@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 import { Rupiah } from '../utils/Currency'
 import { socketService } from '../utils/socket'
-import { RefreshCw, ShoppingCart } from 'lucide-react'
+import { RefreshCw, ShoppingCart, Heart } from 'lucide-react'
 
 const Products = () => {
   const [products, setProducts] = useState([])
@@ -38,7 +38,7 @@ const Products = () => {
     const socket = socketService.connect()
 
     socket.on('product-created', (newProduct) => {
-      console.log('New product created:', newProduct)
+      
       setProducts(prev => {
         
         const exists = prev.find(p => p.id === newProduct.id)
