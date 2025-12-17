@@ -9,21 +9,21 @@ import { logAudit, AUDIT_ACTIONS } from '../utils/auditLogger.js';
 export const register = async (req, res) => {
   try {
     const validatedData = registerSchema.parse(req.body);
-    
+
     const existingUser = await prisma.user.findUnique({
       where: { email: validatedData.email }
     });
 
     if (existingUser) {
-     await logAudit(
-      AUDIT_ACTIONS.REGISTER,
-      null,
-      validatedData.email,
-      'Register failed - user already exist',
-      req.ip,
-      req.get('user-agent')
-     )
-     return res.status(400).json({error: 'User already exist'});
+      await logAudit(
+        AUDIT_ACTIONS.REGISTER,
+        null,
+        validatedData.email,
+        'Register failed - user already exist',
+        req.ip,
+        req.get('user-agent')
+      )
+      return res.status(400).json({ error: 'User already exist' });
     }
 
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
@@ -43,20 +43,20 @@ export const register = async (req, res) => {
       email: user.email,
       role: user.role
     };
-      await logAudit(
-        AUDIT_ACTIONS.REGISTER,
-        user.id,
-        user.email,
-        'User register succes',
-        req.ip,
-        req.get('user-Agent')
-      )
+    await logAudit(
+      AUDIT_ACTIONS.REGISTER,
+      user.id,
+      user.email,
+      'User register succes',
+      req.ip,
+      req.get('user-Agent')
+    )
 
-       res.status(201).json({
+    res.status(201).json({
       message: 'User created successfully',
       user: req.session.user
     });
-    
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       await logAudit(
@@ -68,7 +68,7 @@ export const register = async (req, res) => {
         req.get('User-agent')
       )
 
-      if(error instanceof z.ZodError){
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Validation failed',
           detals: error.errors
@@ -76,14 +76,14 @@ export const register = async (req, res) => {
       }
       res.status(500).json({ error: 'Internal server error' });
     }
-    
+
   }
 }
 
 export const login = async (req, res) => {
   try {
     console.log('Login attempt for email:', req.body.email)
-    
+
     const validatedData = loginSchema.parse(req.body)
     const { rememberMe = false } = req.body
 
@@ -91,7 +91,7 @@ export const login = async (req, res) => {
       where: { email: validatedData.email }
     })
 
-    
+
     if (!user) {
       console.log('User not found for email:', validatedData.email)
       await logAudit(
@@ -104,7 +104,7 @@ export const login = async (req, res) => {
       )
       return res.status(401).json({ error: 'Invalid credentials' })
     }
-    
+
     const isPasswordValid = await bcrypt.compare(validatedData.password, user.password)
     console.log('Password valid:', isPasswordValid)
 
@@ -121,7 +121,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    
+
     req.session.user = {
       id: user.id,
       name: user.name,
@@ -135,7 +135,7 @@ export const login = async (req, res) => {
       req.session.cookie.expires = false
     }
 
-    
+
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err)
@@ -153,7 +153,7 @@ export const login = async (req, res) => {
       )
 
       console.log('Login successful for user:', user.email)
-      
+
       res.json({
         message: 'Login successful',
         user: req.session.user
@@ -163,9 +163,9 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error)
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: error.errors 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.errors
       })
     }
     res.status(500).json({ error: 'Internal server error' })
@@ -189,7 +189,7 @@ export const logout = (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to logout' });
     }
-    
+
     res.clearCookie('connect.sid');
     res.json({ message: 'Logout successful' });
   });
@@ -197,13 +197,13 @@ export const logout = (req, res) => {
 
 export const getAuthStatus = (req, res) => {
   if (req.session.user) {
-    res.json({ 
-      authenticated: true, 
-      user: req.session.user 
+    res.json({
+      authenticated: true,
+      user: req.session.user
     });
   } else {
-    res.json({ 
-      authenticated: false 
+    res.json({
+      authenticated: false
     });
   }
 };
@@ -211,23 +211,18 @@ export const getAuthStatus = (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: {id: req.session.user.id},
+      where: { id: req.session.user.id },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        createdAt: true,
-        profile: {
-          select: {
-            phone: true,
-            address: true,
-            city: true,
-            postalCode: true,
-            country: true,
-            avatar: true
-          }
-        }
+        phone: true,
+        address: true,
+        city: true,
+        postalCode: true,
+        country: true,
+        createdAt: true
       }
     });
     res.json(user)
@@ -303,7 +298,7 @@ export const updateProfile = async (req, res) => {
     })
   } catch (error) {
     console.error('Error updating profile:', error)
-    
+
     await logAudit(
       AUDIT_ACTIONS.PROFILE_UPDATE,
       req.session.user.id,
@@ -312,7 +307,7 @@ export const updateProfile = async (req, res) => {
       req.ip,
       req.get('User-Agent')
     )
-    
+
     res.status(500).json({ error: 'Failed to update profile' })
   }
 }

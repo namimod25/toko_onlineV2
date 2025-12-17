@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './utils/database.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import  sessionConfig  from './config/session.js';
+import sessionConfig from './config/session.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -19,9 +19,10 @@ import customerRoutes from './routes/customer.js';
 // Import middleware
 import { trackVisitor } from './middleware/visitorTracker.js';
 import { logger } from './utils/logger.js';
-import {createServer} from 'http';
+import { createServer } from 'http';
 import { initializeSocket } from './socket/socket.js';
-import { getProfile } from './controllers/authController.js';
+import { getProfile, updateProfile } from './controllers/authController.js';
+import { requireAuth } from './middleware/auth.js';
 
 
 dotenv.config();
@@ -60,37 +61,40 @@ app.use('/api/landing', landingRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/customer', customerRoutes);
-app.use('/api/profile', getProfile);
+
+// Profile routes - fixed to use proper HTTP methods
+app.get('/api/profile', requireAuth, getProfile);
+app.put('/api/profile', requireAuth, updateProfile);
 
 // handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
 });
 
 app.get('/api/status', async (req, res) => {
- try {
-   const user = await prisma.user.findUnique({
-     where: { id: req.user.userId },
-     select: {
-       id: true,
-       name: true,
-       email: true,
-       role: true
-     }
-   });
-   
-   if (!user) {
-     return res.status(404).json({ error: 'User not found' });
-   }
-   
-   res.json({ user });
- } catch (error) {
-   res.status(500).json({ error: 'Failed to get user info' });
- }
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get user info' });
+  }
 });
 
 // error handler route
