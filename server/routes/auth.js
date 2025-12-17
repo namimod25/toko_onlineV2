@@ -7,7 +7,7 @@ import {
   getProfile,
   updateProfile
 } from '../controllers/authController.js';
-import {changePassword} from '../controllers/passwordController.js';
+
 import { requireAuth } from '../middleware/auth.js';
 import { loginSchema, validate } from '../middleware/validation.js';
 
@@ -27,7 +27,7 @@ router.get('/profile', requireAuth, getProfile);
 router.put('/profile', requireAuth, updateProfile);
 
 //ganti password
-router.post('/password/change', requireAuth, changePassword);
+router.post('/password/change', requireAuth);
 
 export default router;
 

@@ -122,12 +122,12 @@ model passwordReset {
   id Int @id @default(autoincrement())
   email String 
   token String @unique
-  expireAt DateTime
+  expiresAt DateTime
   used Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("password reset")
+  @@map("password_reset")
 }
 
 model Auditlog {
