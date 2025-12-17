@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import {useAuth} from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 
-import { 
-  User, 
-  Package, 
-  Heart, 
-  Settings, 
+import {
+  User,
+  Package,
+  Heart,
+  Settings,
   ShoppingBag,
   Clock,
   MapPin,
   Phone,
   Mail,
   Edit,
-  LogOut
+  LogOut,
+  Save,
+  X,
+  CheckCircle
 } from 'lucide-react'
 import axios from 'axios'
 
@@ -24,6 +27,18 @@ const CustomerDashboard = () => {
   const [orders, setOrders] = useState([])
   const [wishlist, setWishlist] = useState([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [formData, setFormData] = useState({
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    country: '',
+    bio: ''
+  })
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -31,10 +46,23 @@ const CustomerDashboard = () => {
     }
   }, [user, activeTab])
 
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        phone: profile.phone || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        postalCode: profile.postalCode || '',
+        country: profile.country || '',
+        bio: profile.bio || ''
+      })
+    }
+  }, [profile])
+
   const fetchData = async () => {
     try {
       setLoading(true)
-      
+
       if (activeTab === 'profile') {
         const response = await axios.get('/api/customer/profile')
         setProfile(response.data)
@@ -49,6 +77,54 @@ const CustomerDashboard = () => {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleEditClick = () => {
+    setEditing(true)
+    setSuccessMessage('')
+    setErrorMessage('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditing(false)
+    if (profile) {
+      setFormData({
+        phone: profile.phone || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        postalCode: profile.postalCode || '',
+        country: profile.country || '',
+        bio: profile.bio || ''
+      })
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    setSaveLoading(true)
+    setErrorMessage('')
+    try {
+      await axios.put('/api/customer/profile', formData)
+      setSuccessMessage('Profile updated successfully!')
+      setEditing(false)
+      fetchData()
+
+      setTimeout(() => {
+        setSuccessMessage('')
+      }, 3000)
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setErrorMessage(error.response?.data?.error || 'Failed to update profile')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
@@ -90,11 +166,10 @@ const CustomerDashboard = () => {
               <nav className="space-y-2">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${
-                    activeTab === 'profile' 
-                      ? 'bg-blue-50 text-blue-600' 
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${activeTab === 'profile'
+                      ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <User className="h-5 w-5" />
                   <span>My Profile</span>
@@ -102,11 +177,10 @@ const CustomerDashboard = () => {
 
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${
-                    activeTab === 'orders' 
-                      ? 'bg-blue-50 text-blue-600' 
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${activeTab === 'orders'
+                      ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Package className="h-5 w-5" />
                   <span>My Orders</span>
@@ -114,11 +188,10 @@ const CustomerDashboard = () => {
 
                 <button
                   onClick={() => setActiveTab('wishlist')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${
-                    activeTab === 'wishlist' 
-                      ? 'bg-blue-50 text-blue-600' 
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${activeTab === 'wishlist'
+                      ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Heart className="h-5 w-5" />
                   <span>Wishlist</span>
@@ -126,11 +199,10 @@ const CustomerDashboard = () => {
 
                 <button
                   onClick={() => setActiveTab('settings')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${
-                    activeTab === 'settings' 
-                      ? 'bg-blue-50 text-blue-600' 
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition duration-200 ${activeTab === 'settings'
+                      ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
@@ -181,11 +253,52 @@ const CustomerDashboard = () => {
                 {/* Profile Tab */}
                 {activeTab === 'profile' && profile && (
                   <div className="bg-white rounded-lg shadow-md p-6">
+                    {/* Success Message */}
+                    {successMessage && (
+                      <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                          <p className="text-green-700">{successMessage}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Message */}
+                    {errorMessage && (
+                      <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="text-red-700">{errorMessage}</p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center mb-6">
                       <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
-                      <button className="text-blue-600 hover:text-blue-700">
-                        <Edit className="h-5 w-5" />
-                      </button>
+                      {!editing ? (
+                        <button
+                          onClick={handleEditClick}
+                          className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition duration-200"
+                          title="Edit Profile"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-50 transition duration-200"
+                            title="Cancel"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={saveLoading}
+                            className="text-green-600 hover:text-green-700 p-2 rounded-lg hover:bg-green-50 transition duration-200 disabled:opacity-50"
+                            title="Save"
+                          >
+                            <Save className="h-5 w-5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -195,7 +308,7 @@ const CustomerDashboard = () => {
                             Full Name
                           </label>
                           <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-gray-900">{profile.user.name}</p>
+                            <p className="text-gray-900">{profile.user?.name || user.name}</p>
                           </div>
                         </div>
 
@@ -205,7 +318,7 @@ const CustomerDashboard = () => {
                           </label>
                           <div className="flex items-center bg-gray-50 p-3 rounded-lg">
                             <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                            <p className="text-gray-900">{profile.user.email}</p>
+                            <p className="text-gray-900">{profile.user?.email || user.email}</p>
                           </div>
                         </div>
 
@@ -213,10 +326,21 @@ const CustomerDashboard = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Phone
                           </label>
-                          <div className="flex items-center bg-gray-50 p-3 rounded-lg">
-                            <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                            <p className="text-gray-900">{profile.phone || 'Not set'}</p>
-                          </div>
+                          {editing ? (
+                            <input
+                              type="tel"
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleInputChange}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Enter phone number"
+                            />
+                          ) : (
+                            <div className="flex items-center bg-gray-50 p-3 rounded-lg">
+                              <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                              <p className="text-gray-900">{profile.phone || 'Not set'}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -225,29 +349,115 @@ const CustomerDashboard = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Address
                           </label>
-                          <div className="flex items-start bg-gray-50 p-3 rounded-lg">
-                            <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-1" />
-                            <div>
-                              <p className="text-gray-900">{profile.address || 'Not set'}</p>
-                              {profile.city && (
-                                <p className="text-gray-600 text-sm mt-1">
-                                  {profile.city}, {profile.postalCode} {profile.country}
-                                </p>
-                              )}
+                          {editing ? (
+                            <textarea
+                              name="address"
+                              value={formData.address}
+                              onChange={handleInputChange}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Enter your address"
+                            />
+                          ) : (
+                            <div className="flex items-start bg-gray-50 p-3 rounded-lg">
+                              <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-1" />
+                              <div>
+                                <p className="text-gray-900">{profile.address || 'Not set'}</p>
+                                {profile.city && (
+                                  <p className="text-gray-600 text-sm mt-1">
+                                    {profile.city}, {profile.postalCode} {profile.country}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
+
+                        {editing && (
+                          <>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  City
+                                </label>
+                                <input
+                                  type="text"
+                                  name="city"
+                                  value={formData.city}
+                                  onChange={handleInputChange}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="City"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Postal Code
+                                </label>
+                                <input
+                                  type="text"
+                                  name="postalCode"
+                                  value={formData.postalCode}
+                                  onChange={handleInputChange}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Postal Code"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Country
+                              </label>
+                              <input
+                                type="text"
+                                name="country"
+                                value={formData.country}
+                                onChange={handleInputChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Country"
+                              />
+                            </div>
+                          </>
+                        )}
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Bio
                           </label>
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-gray-900">{profile.bio || 'No bio yet'}</p>
-                          </div>
+                          {editing ? (
+                            <textarea
+                              name="bio"
+                              value={formData.bio}
+                              onChange={handleInputChange}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Tell us about yourself"
+                            />
+                          ) : (
+                            <div className="bg-gray-50 p-3 rounded-lg">
+                              <p className="text-gray-900">{profile.bio || 'No bio yet'}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+
+                    {editing && (
+                      <div className="mt-6 flex justify-end space-x-4">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={saveLoading}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                        >
+                          {saveLoading ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -292,12 +502,11 @@ const CustomerDashboard = () => {
                                 <p className="text-lg font-bold text-green-600">
                                   Rp {order.total.toLocaleString()}
                                 </p>
-                                <span className={`inline-block px-2 py-1 rounded text-xs ${
-                                  order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                  order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
-                                  order.status === 'PENDING' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
+                                <span className={`inline-block px-2 py-1 rounded text-xs ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
+                                      order.status === 'PENDING' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-red-100 text-red-800'
+                                  }`}>
                                   {order.status}
                                 </span>
                               </div>
@@ -365,7 +574,7 @@ const CustomerDashboard = () => {
                 {activeTab === 'settings' && (
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-                    
+
                     <div className="space-y-6">
                       {/* Change Password Form */}
                       <div>

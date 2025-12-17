@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, NavLink } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { ShoppingCart, LogOut, Menu } from 'lucide-react'
 
@@ -80,9 +80,12 @@ const Navbar = () => {
                                      <Link to="/profile" className="text-gray-600 hover:text-gray-800 transition duration-200">
                                             My Profile
                                      </Link>
-                                     <Link to="/products" className="text-gray-600 hover:text-gray-800 transition duration-200">
+                                     <NavLink to="/products" className={({ isActive }) => 
+                                            `transition duration-200 ${isActive ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-800'}`
+                                        }
+                                     >
                                             Products
-                                    </Link>
+                                    </NavLink>
                                     <Link to="/cart" className="text-gray-600 hover:text-gray-800 transition duration-200">
                                             Cart
                                     </Link>

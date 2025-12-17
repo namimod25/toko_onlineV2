@@ -17,6 +17,7 @@ import HeroSlides from './pages/admin/HeroSlides'
 import ResetPassword from './pages/ResetPassword'
 import ProductCard from './components/productCard'
 import Users from './pages/admin/Users'
+import ProductDetail from './pages/ProductDetail'
 import CustomerDashboard from './pages/customer/Dashboard'
 import './index.css'
 
@@ -32,15 +33,16 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/home" element={<Home />} />
+              <Route path='/products/:id' element={<ProductDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path='forgot-password' element={<ForgotPassword />} />
               <Route path='reset-password' element={<ResetPassword />} />
               <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
               <Route path='/product-card' element={<ProductCard />} />
-              <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>}/>
+              <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
               <Route path="/profile" element={<Profile />} />
-              <Route path='/change-password' element={<ChangePassword/>}/>
+              <Route path='/change-password' element={<ChangePassword />} />
               <Route path='/admin/dashboard' element={<AdminDashboard />} />
               <Route path='/customer/dashboard' element={<CustomerDashboard />} />
               <Route path='/admin/hero-slide' element={<HeroSlides />} />
@@ -54,10 +56,10 @@ function App() {
   )
 }
 
-function app(){
-  return(
+function app() {
+  return (
     <AuthProvider>
-      <App/>
+      <App />
     </AuthProvider>
   )
 }

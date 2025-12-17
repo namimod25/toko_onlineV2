@@ -285,13 +285,11 @@ const LandingPage = () => {
                               {Rupiah(product.price)}
                             </span>
                             <Link
-                              to={user ? `/products/${product.id}` : "/register"}
-                              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                              disabled={product.stock === 0}
-                            >
-                              {product.stock === 0 ? 'Out of Stock' : 'View Details'}
-                              <ArrowRight className="ml-1 h-3 w-3" />
-                            </Link>
+                                to={`/products/${product.id}`}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200 text-sm font-medium"
+                              >
+                               View Details →
+                              </Link>
                           </div>
                           {product.stock > 0 && product.stock < 5 && (
                             <div className="mt-2 text-xs text-orange-600 font-medium">
