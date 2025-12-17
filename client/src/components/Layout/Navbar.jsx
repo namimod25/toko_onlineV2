@@ -47,9 +47,9 @@ const Navbar = () => {
                             </div>
                         ) : (
                             <div className="flex items-center space-x-2">
-                                <Link to="/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                                {/* <Link to="/login" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                                     Login
-                                </Link>
+                                </Link> */}
                                 <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
                                     Register
                                 </Link>
@@ -100,9 +100,9 @@ const Navbar = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Link to="/login" className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium" onClick={() => setIsMobileMenuOpen(false)}>
+                                    {/* <Link to="/login" className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium" onClick={() => setIsMobileMenuOpen(false)}>
                                         Login
-                                    </Link>
+                                    </Link> */}
                                     <Link to="/register" className="block bg-blue-600 text-white px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700" onClick={() => setIsMobileMenuOpen(false)}>
                                         Register
                                     </Link>

@@ -263,7 +263,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+                  <span className="px-2 bg-white text-gray-500">Tidak punya akun?</span>
                 </div>
               </div>
 
@@ -273,7 +273,7 @@ const Login = () => {
                   to="/register"
                   className="inline-flex items-center font-medium text-blue-600 hover:text-blue-500 transition duration-200 group"
                 >
-                  Create an account
+                  Daftar 
                   <svg className="ml-1 w-4 h-4 transform group-hover:translate-x-1 transition duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
