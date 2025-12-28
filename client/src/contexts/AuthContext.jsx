@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token')
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      
+
       verifyToken()
     } else {
       setLoading(false)
@@ -35,9 +35,9 @@ export const AuthProvider = ({ children }) => {
   const verifyToken = async () => {
     try {
       const response = await axios.get('/api/auth/status')
-      if(response.data.authenticated){
+      if (response.data.authenticated) {
         setUser(response.data.user)
-      }else{
+      } else {
         localStorage.removeItem('token')
         delete axios.defaults.headers.common['Authorization']
       }
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-   const checkAuthStatus = async () => {
+  const checkAuthStatus = async () => {
     try {
       const response = await axios.get('/api/auth/status')
       if (response.data.authenticated) {
@@ -62,20 +62,25 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const login = async (email, password) => {
+  const login = async (email, password, captchaId, captchaAnswer) => {
     try {
-      const response = await axios.post('/api/login', { email, password })
+      const response = await axios.post('/api/login', {
+        email,
+        password,
+        captchaId,
+        captchaAnswer
+      })
       const { token, user } = response.data
-      
+
       localStorage.setItem('token', token)
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       setUser(user)
-      
-      return { success: true }
+
+      return { success: true, user }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || error.response?.data?.message || 'Login failed'
       }
     }
   }
@@ -84,16 +89,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post('/api/register', userData)
       const { token, user } = response.data
-      
+
       localStorage.setItem('token', token)
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       setUser(user)
-      
+
       return { success: true }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Registration failed'
       }
     }
   }
