@@ -29,8 +29,8 @@ export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   rememberMe: z.boolean().optional(),
-  captchaId: z.string().optional(),
-  captchaAnswer: z.string().optional()
+  captchaId: z.string().min(1, 'CAPTCHA ID is required'),
+  captchaAnswer: z.string().min(1, 'CAPTCHA answer is required')
 });
 
 export const registerSchema = z.object({
@@ -55,9 +55,9 @@ export const validate = (schema) => (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: error.errors 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.errors
       });
     }
     next(error);

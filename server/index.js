@@ -15,6 +15,7 @@ import landingRoutes from './routes/landing.js'
 import wishlistRoutes from './routes/wishlist.js';
 import passwordRoutes from "./routes/password.js"
 import customerRoutes from './routes/customer.js';
+import captchaRoutes from './routes/captcha.js';
 
 // Import middleware
 import { trackVisitor } from './middleware/visitorTracker.js';
@@ -61,6 +62,7 @@ app.use('/api/landing', landingRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/captcha', captchaRoutes);
 
 // Profile routes - fixed to use proper HTTP methods
 app.get('/api/profile', requireAuth, getProfile);

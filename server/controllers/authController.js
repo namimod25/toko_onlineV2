@@ -4,6 +4,7 @@ import prisma from '../utils/database.js';
 import { registerSchema, loginSchema } from '../middleware/validation.js';
 import z from 'zod';
 import { logAudit, AUDIT_ACTIONS } from '../utils/auditLogger.js';
+import { captchaService } from '../utils/captcha.js';
 
 
 export const register = async (req, res) => {
@@ -85,7 +86,22 @@ export const login = async (req, res) => {
     console.log('Login attempt for email:', req.body.email)
 
     const validatedData = loginSchema.parse(req.body)
-    const { rememberMe = false } = req.body
+    const { rememberMe = false, captchaId, captchaAnswer } = req.body
+
+    // Validate CAPTCHA first
+    const captchaValidation = captchaService.validateCaptcha(captchaId, captchaAnswer)
+    if (!captchaValidation.valid) {
+      console.log('CAPTCHA validation failed:', captchaValidation.error)
+      await logAudit(
+        AUDIT_ACTIONS.LOGIN_FAILED,
+        null,
+        validatedData.email,
+        `CAPTCHA validation failed: ${captchaValidation.error}`,
+        req.ip,
+        req.get('User-Agent')
+      )
+      return res.status(400).json({ error: captchaValidation.error || 'Invalid CAPTCHA' })
+    }
 
     const user = await prisma.user.findUnique({
       where: { email: validatedData.email }
