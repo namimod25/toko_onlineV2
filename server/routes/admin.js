@@ -13,7 +13,7 @@ import {
   deleteProduct, 
   updateStock
 } from '../controllers/productController.js';
-import { getOrders, updateOrderStatus } from '../controllers/orderController.js';
+import { createOrder } from '../controllers/orderController.js';
 import {  createUser, deleteUser, getUsers, updateUser, resetUserPassword } from '../controllers/userController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
@@ -39,8 +39,8 @@ router.get('/hero-slide/:id/toggle', requireAuth, requireAdmin, toggleHeroSlide)
 router.delete('/hero-slides/:id', requireAuth, requireAdmin, deleteHeroSlide);
 
 // Order Management
-router.get('/orders', requireAuth, requireAdmin, getOrders);
-router.patch('/orders/:id/status', requireAuth, requireAdmin, updateOrderStatus);
+router.get('/orders', requireAuth, requireAdmin, createOrder);
+router.patch('/orders/:id/status', requireAuth, requireAdmin);
 
 // User Management
 router.get('/users', requireAuth, requireAdmin, getUsers);

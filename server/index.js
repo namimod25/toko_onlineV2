@@ -3,6 +3,7 @@ import cors from 'cors';
 import session from 'express-session';
 import dotenv from 'dotenv';
 import { connectDB } from './utils/database.js';
+import prisma from './utils/database.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sessionConfig from './config/session.js';
@@ -16,6 +17,8 @@ import wishlistRoutes from './routes/wishlist.js';
 import passwordRoutes from "./routes/password.js"
 import customerRoutes from './routes/customer.js';
 import captchaRoutes from './routes/captcha.js';
+import cartRoutes from './routes/cart.js'
+import orderRoutes from './routes/order.js'
 
 // Import middleware
 import { trackVisitor } from './middleware/visitorTracker.js';
@@ -63,6 +66,9 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/captcha', captchaRoutes);
+app.use('/api/cart', cartRoutes)
+app.use('/api/orders', orderRoutes)
+
 
 // Profile routes - fixed to use proper HTTP methods
 app.get('/api/profile', requireAuth, getProfile);

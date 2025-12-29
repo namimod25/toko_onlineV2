@@ -3,7 +3,7 @@ import { captchaService } from '../utils/captcha.js'
 
 const router = express.Router()
 
-// Generate new CAPTCHA
+// Generate CAPTCHA baru
 router.get('/generate', (req, res) => {
   try {
     // Pilih random antara math atau text CAPTCHA
@@ -25,7 +25,7 @@ router.get('/generate', (req, res) => {
   }
 })
 
-// Validate CAPTCHA (standalone endpoint)
+// Validate CAPTCHA
 router.post('/validate', (req, res) => {
   try {
     const { captchaId, answer } = req.body

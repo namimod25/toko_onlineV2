@@ -88,7 +88,7 @@ export const login = async (req, res) => {
     const validatedData = loginSchema.parse(req.body)
     const { rememberMe = false, captchaId, captchaAnswer } = req.body
 
-    // Validate CAPTCHA first
+    // Validate CAPTCHA
     const captchaValidation = captchaService.validateCaptcha(captchaId, captchaAnswer)
     if (!captchaValidation.valid) {
       console.log('CAPTCHA validation failed:', captchaValidation.error)
@@ -158,7 +158,7 @@ export const login = async (req, res) => {
         return res.status(500).json({ error: 'Session error' })
       }
 
-      // Audit log success login
+      // Audit log login
       logAudit(
         AUDIT_ACTIONS.LOGIN,
         user.id,
@@ -189,7 +189,7 @@ export const login = async (req, res) => {
 }
 
 export const logout = (req, res) => {
-  // destroy
+  // delet
   if (req.session.user) {
     logAudit(
       AUDIT_ACTIONS.LOGOUT,

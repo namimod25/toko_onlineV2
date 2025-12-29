@@ -32,7 +32,7 @@ class CaptchaService {
     const question = `${num1} ${operator} ${num2}`
     const captchaId = Date.now().toString(36) + Math.random().toString(36).substr(2)
     
-    // Store answer dengan expiry 5 menit
+    // expiry 5 menit
     this.captchaStore.set(captchaId, {
       answer: answer.toString(),
       expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
