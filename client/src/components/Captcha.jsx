@@ -20,7 +20,7 @@ const Captcha = ({ onCaptchaChange, error }) => {
 
             if (response.data.success) {
                 setCaptchaData(response.data.captcha);
-                // Notify parent component with captchaId and empty answer
+                // komponen induk dengan captchaId dan jawaban kosong
                 onCaptchaChange(response.data.captcha.captchaId, '');
             }
         } catch (error) {
