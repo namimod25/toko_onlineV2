@@ -23,7 +23,7 @@ const Cart = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login')
+      navigate('/')
       return
     }
     fetchCart()
@@ -34,7 +34,6 @@ const Cart = () => {
       const response = await axios.get('/api/cart')
       setCart(response.data)
     } catch (error) {
-      console.error('Error fetching cart:', error)
     } finally {
       setLoading(false)
     }
@@ -42,12 +41,9 @@ const Cart = () => {
 
   const updateQuantity = async (cartItemId, newQuantity) => {
     try {
-      await axios.put(`/api/cart/items/${cartItemId}`, {
-        quantity: newQuantity
-      })
-      fetchCart() // Refresh cart
+      await axios.put(`/api/cart/items/${cartItemId}`, { quantity: newQuantity })
+      fetchCart()
     } catch (error) {
-      console.error('Error updating quantity:', error)
       alert(error.response?.data?.error || 'Failed to update quantity')
     }
   }
@@ -55,21 +51,18 @@ const Cart = () => {
   const removeItem = async (cartItemId) => {
     try {
       await axios.delete(`/api/cart/items/${cartItemId}`)
-      fetchCart() // Refresh cart
+      fetchCart()
     } catch (error) {
-      console.error('Error removing item:', error)
-      alert('Failed to remove item from cart')
+      alert('Failed to remove item')
     }
   }
 
   const clearCart = async () => {
-    if (!confirm('Are you sure you want to clear your cart?')) return
-
+    if (!confirm('Clear your cart?')) return
     try {
       await axios.delete('/api/cart/clear')
-      fetchCart() // Refresh cart
+      fetchCart()
     } catch (error) {
-      console.error('Error clearing cart:', error)
       alert('Failed to clear cart')
     }
   }
@@ -78,14 +71,11 @@ const Cart = () => {
     setCheckoutLoading(true)
     try {
       const response = await axios.post('/api/orders/create', {
-        shippingAddress: 'Jl. Example No. 123, Jakarta', // Example address
+        shippingAddress: 'Jakarta, Indonesia',
         paymentMethod: 'bank_transfer'
       })
-
-      // Redirect to Midtrans payment page
       window.location.href = response.data.snapRedirectUrl
     } catch (error) {
-      console.error('Checkout error:', error)
       alert(error.response?.data?.error || 'Checkout failed')
     } finally {
       setCheckoutLoading(false)
@@ -94,202 +84,110 @@ const Cart = () => {
 
   const calculateTotal = () => {
     if (!cart?.items) return 0
-    return cart.items.reduce((total, item) => {
-      return total + (item.product.price * item.quantity)
-    }, 0)
+    return cart.items.reduce((total, item) => total + (item.product.price * item.quantity), 0)
   }
 
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Please login to view your cart
-        </h2>
-        <Link
-          to="/login"
-          className="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition duration-200"
-        >
-          Go to Login
-        </Link>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )
 
   const totalItems = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
   const cartTotal = calculateTotal()
-  const shippingCost = 20000
+  const shippingCost = 10000
   const grandTotal = cartTotal + shippingCost
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
-        <p className="text-gray-600 mb-8">
-          {totalItems} item{totalItems !== 1 ? 's' : ''} in your cart
-        </p>
+    <div className="min-h-screen bg-gray-50 pb-40">
+      <div className="p-6">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900">My Bag</h1>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{totalItems} items</p>
+          </div>
+          {cart?.items?.length > 0 && (
+            <button onClick={clearCart} className="text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-3 py-1.5 rounded-full">
+              Clear all
+            </button>
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            {!cart?.items || cart.items.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Your cart is empty
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Add some products to get started
-                </p>
-                <Link
-                  to="/products"
-                  className="inline-flex items-center bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition duration-200"
-                >
-                  <ShoppingBag className="h-5 w-5 mr-2" />
-                  Browse Products
-                </Link>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="p-6">
-                  {cart.items.map((item) => (
-                    <div key={item.id} className="flex items-center py-4 border-b last:border-0">
-                      <div className="flex-shrink-0 w-20 h-20">
-                        <img
-                          src={item.product.image}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover rounded"
-                          onError={(e) => {
-                            e.target.src = "https://via.placeholder.com/100x100?text=No+Image"
-                          }}
-                        />
-                      </div>
-
-                      <div className="ml-4 flex-1">
-                        <h4 className="font-medium text-gray-900 line-clamp-2">
-                          {item.product.name}
-                        </h4>
-                        <p className="text-sm text-gray-500">
-                          {item.product.category}
-                        </p>
-                        <p className="text-lg font-bold text-green-600 mt-1">
-                          {Rupiah(item.product.price)}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center border rounded">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                            className="px-3 py-1 text-gray-600 hover:text-gray-900 disabled:opacity-50"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <span className="px-3 py-1">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="px-3 py-1 text-gray-600 hover:text-gray-900"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-red-500 hover:text-red-700 transition duration-200"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+        {!cart?.items || cart.items.length === 0 ? (
+          <div className="bg-white rounded-[40px] p-12 text-center shadow-sm border border-gray-100">
+            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag size={40} className="text-blue-200" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Bag is empty</h3>
+            <p className="text-sm text-gray-400 mb-8">Items you add to your bag will appear here.</p>
+            <Link to="/products" className="inline-block bg-blue-600 text-white px-8 py-4 rounded-3xl font-black shadow-xl shadow-blue-600/20">
+              Browse Store
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {cart.items.map((item) => (
+              <div key={item.id} className="bg-white p-4 rounded-[32px] shadow-sm border border-gray-100 flex gap-4 animate-fade-in">
+                <div className="w-24 h-24 bg-gray-50 rounded-2xl overflow-hidden shadow-inner">
+                  <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
                 </div>
-
-                <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
-                  <button
-                    onClick={clearCart}
-                    className="text-red-500 hover:text-red-700 font-medium"
-                  >
-                    Clear Cart
-                  </button>
-                  <div className="text-lg font-bold">
-                    Subtotal: {Rupiah(cartTotal)}
+                <div className="flex-1 flex flex-col justify-between py-1">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800 line-clamp-1">{item.product.name}</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">{item.product.category}</p>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <span className="text-sm font-black text-blue-600">{Rupiah(item.product.price)}</span>
+                    <div className="flex items-center bg-gray-50 rounded-xl p-1 gap-3">
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center font-bold disabled:opacity-30"
+                        disabled={item.quantity <= 1}
+                      ><Minus size={14} /></button>
+                      <span className="font-bold text-xs w-4 text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center font-bold"
+                      ><Plus size={14} /></button>
+                    </div>
                   </div>
                 </div>
+                <button onClick={() => removeItem(item.id)} className="self-start text-gray-300 hover:text-red-500 transition-colors p-1">
+                  <Trash2 size={18} />
+                </button>
               </div>
-            )}
+            ))}
           </div>
+        )}
+      </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Order Summary
-              </h3>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{Rupiah(cartTotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">{Rupiah(shippingCost)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-3">
-                  <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-green-600">
-                    {Rupiah(grandTotal)}
-                  </span>
-                </div>
+      {/* Floating Summary Bar */}
+      {cart?.items?.length > 0 && (
+        <div className="fixed bottom-24 left-4 right-4 z-40 animate-slide-up">
+          <div className="glass p-6 rounded-[32px] border border-white/20 shadow-2xl shadow-black/5">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
+                <p className="text-2xl font-black text-gray-900">{Rupiah(grandTotal)}</p>
               </div>
-
               <button
                 onClick={handleCheckout}
-                disabled={!cart?.items?.length || checkoutLoading}
-                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                disabled={checkoutLoading}
+                className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-blue-600/20 active:scale-95 transition-all text-sm disabled:opacity-50"
               >
-                <CreditCard className="h-5 w-5 mr-2" />
-                {checkoutLoading ? 'Processing...' : 'Proceed to Checkout'}
+                {checkoutLoading ? '...' : 'Checkout'}
               </button>
-
-              <p className="text-xs text-gray-500 mt-4 text-center">
-                You will be redirected to Midtrans for secure payment
-              </p>
-
-              <div className="mt-6">
-                <h4 className="font-medium text-gray-900 mb-2">Test Payment Details</h4>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p><strong>Card Number:</strong> 4811 1111 1111 1114</p>
-                  <p><strong>Expiry:</strong> Any future date</p>
-                  <p><strong>CVV:</strong> 123</p>
-                  <p><strong>OTP:</strong> 112233</p>
-                </div>
-              </div>
             </div>
-
-            <div className="mt-4">
-              <Link
-                to="/products"
-                className="inline-flex items-center text-blue-600 hover:text-blue-500 font-medium"
-              >
-                <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-                Continue Shopping
-              </Link>
+            <div className="flex gap-2 items-center text-[10px] font-bold text-gray-400">
+              <Truck size={12} />
+              <span>Includes {Rupiah(shippingCost)} delivery fee</span>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
+
 
 export default Cart

@@ -38,10 +38,8 @@ const ProductDetail = () => {
       navigate('/login')
       return
     }
-
     fetchProductDetail()
     setupSocketListeners()
-
     return () => {
       const socket = socketService.getSocket()
       if (socket) {
@@ -54,45 +52,29 @@ const ProductDetail = () => {
 
   const setupSocketListeners = () => {
     const socket = socketService.connect()
-
-    // Join specific product room
     socket.emit('join-product-room', id)
-
     socket.on(`product-detail-updated-${id}`, (updatedProduct) => {
-      console.log('Product detail updated:', updatedProduct)
       setProduct(updatedProduct)
       setRealTimeUpdates(prev => prev + 1)
-      showNotification('Product updated in real-time!')
+      showNotification('Product updated!')
     })
-
-    socket.on(`product-detail-deleted-${id}`, (deletedProductId) => {
-      console.log('Product deleted:', deletedProductId)
-      showNotification('This product has been removed')
+    socket.on(`product-detail-deleted-${id}`, () => {
+      showNotification('Product removed')
       setTimeout(() => navigate('/products'), 2000)
     })
-
-    socket.on(`product-stock-updated-${id}`, ({ productId, stock }) => {
-      console.log('Stock updated:', stock)
+    socket.on(`product-stock-updated-${id}`, ({ stock }) => {
       setProduct(prev => prev ? { ...prev, stock } : null)
       setRealTimeUpdates(prev => prev + 1)
-      showNotification(`Stock updated: ${stock} available`)
+      showNotification(`Stock updated: ${stock}`)
     })
   }
 
   const showNotification = (message) => {
-    // Create notification element
     const notification = document.createElement('div')
-    notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in-up flex items-center'
-    notification.innerHTML = `
-      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-      <span>${message}</span>
-    `
-
+    notification.className = 'fixed top-4 left-4 right-4 glass bg-blue-600/90 text-white px-4 py-3 rounded-2xl shadow-2xl z-50 animate-fade-in flex items-center justify-center border border-white/20'
+    notification.innerHTML = `<span class="font-bold text-sm">${message}</span>`
     document.body.appendChild(notification)
-
-    setTimeout(() => {
-      notification.remove()
-    }, 3000)
+    setTimeout(() => notification.remove(), 2500)
   }
 
   const fetchProductDetail = async () => {
@@ -100,12 +82,9 @@ const ProductDetail = () => {
       setLoading(true)
       const response = await axios.get(`/api/products/${id}`)
       setProduct(response.data)
-
-      // Fetch related products
       fetchRelatedProducts(response.data.category)
     } catch (error) {
-      console.error('Error fetching product detail:', error)
-      setError('Product not found or failed to load')
+      setError('Product not found')
     } finally {
       setLoading(false)
     }
@@ -114,377 +93,158 @@ const ProductDetail = () => {
   const fetchRelatedProducts = async (category) => {
     try {
       const response = await axios.get('/api/products')
-      const related = response.data
-        .filter(p => p.category === category && p.id !== parseInt(id))
-        .slice(0, 4)
+      const related = response.data.filter(p => p.category === category && p.id !== parseInt(id)).slice(0, 4)
       setRelatedProducts(related)
-    } catch (error) {
-      console.error('Error fetching related products:', error)
-    }
+    } catch (error) { }
   }
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change
-    if (newQuantity >= 1 && newQuantity <= (product?.stock || 0)) {
-      setQuantity(newQuantity)
-    }
+    if (newQuantity >= 1 && newQuantity <= (product?.stock || 0)) setQuantity(newQuantity)
   }
 
   const addToCart = async () => {
-    if (!product || product.stock === 0) {
-      alert('Product is out of stock')
-      return
-    }
-
+    if (!product || product.stock === 0) return
     try {
-      await axios.post('/api/cart/add', {
-        productId: product.id,
-        quantity
-      })
-
-      alert(`Added ${quantity} ${product.name} to cart!`)
-      setQuantity(1)
+      await axios.post('/api/cart/add', { productId: product.id, quantity })
+      showNotification(`Added ${quantity} to cart!`)
     } catch (error) {
-      alert('Failed to add product to cart')
+      showNotification('Failed to add to cart')
     }
   }
 
-  const shareProduct = () => {
-    const shareUrl = window.location.href
-    const shareText = `Check out ${product?.name} - ${Rupiah(product?.price)}`
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  )
 
-    if (navigator.share) {
-      navigator.share({
-        title: product?.name,
-        text: shareText,
-        url: shareUrl,
-      })
-    } else {
-      navigator.clipboard.writeText(shareUrl)
-      alert('Link copied to clipboard!')
-    }
-  }
+  if (error || !product) return (
+    <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-white text-center">
+      <Package size={64} className="text-gray-200 mb-4" />
+      <h2 className="text-xl font-bold mb-2">Product Not Found</h2>
+      <Link to="/" className="text-blue-600 font-bold">Return Home</Link>
+    </div>
+  )
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading product details...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="text-center">
-          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || 'The product you are looking for does not exist.'}</p>
-          <Link
-            to="/products"
-            className="inline-flex items-center bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition duration-200"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Products
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  // Sample images array (you can modify this based on your product data)
   const productImages = [
     product.image,
     product.image.replace('300x200', '400x300'),
-    'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=600&q=80',
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Real-time Update Indicator */}
-      {realTimeUpdates > 0 && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full shadow-lg z-40 animate-pulse flex items-center">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          <span className="text-sm">Live Updates</span>
+    <div className="min-h-screen bg-white pb-32">
+      {/* Header Actions */}
+      <div className="fixed top-0 left-0 right-0 z-40 p-4 flex justify-between items-center pointer-events-none md:hidden">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 glass rounded-full flex items-center justify-center pointer-events-auto">
+          <ArrowLeft size={20} />
+        </button>
+        <button className="w-10 h-10 glass rounded-full flex items-center justify-center pointer-events-auto">
+          <Share2 size={20} />
+        </button>
+      </div>
+
+      {/* Hero Gallery */}
+      <div className="relative h-[40vh] md:h-[60vh] bg-gray-100 overflow-hidden">
+        <img
+          src={productImages[selectedImage]}
+          alt={product.name}
+          className="w-full h-full object-cover transition-opacity duration-500"
+        />
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+          {productImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedImage(i)}
+              className={`h-1.5 rounded-full transition-all ${selectedImage === i ? 'w-8 bg-blue-600' : 'w-2 bg-gray-300'}`}
+            />
+          ))}
         </div>
-      )}
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-          <Link to="/" className="hover:text-blue-600">Home</Link>
-          <span>/</span>
-          <Link to="/products" className="hover:text-blue-600">Products</Link>
-          <span>/</span>
-          <span className="text-gray-900 font-medium">{product.name}</span>
-        </nav>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Product Images */}
+      {/* Content */}
+      <div className="p-6 md:p-12 -mt-8 bg-white rounded-t-[40px] relative z-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-between items-start mb-6">
           <div>
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4">
-              <img
-                src={productImages[selectedImage]}
-                alt={product.name}
-                className="w-full h-96 object-cover"
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/600x400?text=No+Image"
-                }}
-              />
-            </div>
-
-            {/* Thumbnail Images */}
-            <div className="grid grid-cols-4 gap-2">
-              {productImages.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`border-2 rounded-lg overflow-hidden ${selectedImage === index ? 'border-blue-500' : 'border-gray-200'
-                    }`}
-                >
-                  <img
-                    src={img}
-                    alt={`${product.name} view ${index + 1}`}
-                    className="w-full h-20 object-cover"
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/100x80?text=Image"
-                    }}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {/* Image Navigation */}
-            <div className="flex justify-between items-center mt-4">
-              <button
-                onClick={() => setSelectedImage(prev => prev > 0 ? prev - 1 : productImages.length - 1)}
-                className="p-2 text-gray-600 hover:text-blue-600"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <span className="text-sm text-gray-500">
-                {selectedImage + 1} / {productImages.length}
-              </span>
-              <button
-                onClick={() => setSelectedImage(prev => prev < productImages.length - 1 ? prev + 1 : 0)}
-                className="p-2 text-gray-600 hover:text-blue-600"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </div>
+            <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-1">{product.category}</p>
+            <h1 className="text-2xl md:text-5xl font-black text-gray-900 leading-tight">{product.name}</h1>
           </div>
-
-          {/* Product Info */}
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={shareProduct}
-                    className="p-2 text-gray-600 hover:text-blue-600 transition duration-200"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                  <button className="p-2 text-gray-600 hover:text-red-600 transition duration-200">
-                    <Heart className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">4.5 (128 reviews)</span>
-                </div>
-                <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                  {product.category}
-                </span>
-              </div>
-
-              <p className="text-4xl font-bold text-green-600 mb-6">
-                {Rupiah(product.price)}
-              </p>
-            </div>
-
-            <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed">{product.description}</p>
-            </div>
-
-            {/* Stock Status */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Package className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="font-medium">Availability:</span>
-                </div>
-                <span className={`font-semibold ${product.stock > 10 ? 'text-green-600' :
-                    product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                  {product.stock > 10 ? 'In Stock' :
-                    product.stock > 0 ? `Low Stock (${product.stock} left)` : 'Out of Stock'}
-                </span>
-              </div>
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="space-y-4">
-              <label className="block font-medium text-gray-700">Quantity</label>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center border rounded-lg">
-                  <button
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 font-semibold">{quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= (product.stock || 0)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                  >
-                    +
-                  </button>
-                </div>
-                <span className="text-sm text-gray-500">
-                  Max: {product.stock} items
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={addToCart}
-                disabled={product.stock === 0}
-                className="flex-1 bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
-              </button>
-
-              <button className="flex-1 bg-gray-900 text-white py-4 px-6 rounded-lg hover:bg-black transition duration-200 font-semibold">
-                Buy Now
-              </button>
-            </div>
-
-            {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t">
-              <div className="flex items-center">
-                <Truck className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="font-medium">Free Shipping</p>
-                  <p className="text-sm text-gray-500">On orders over Rp 500.000</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Shield className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <p className="font-medium">Warranty</p>
-                  <p className="text-sm text-gray-500">1 Year manufacturer warranty</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Details */}
-            <div className="space-y-3 pt-6 border-t">
-              <div className="flex items-center">
-                <Tag className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="font-medium">Category:</span>
-                <span className="ml-2 text-gray-600">{product.category}</span>
-              </div>
-              <div className="flex items-center">
-                <Package className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="font-medium">Stock:</span>
-                <span className="ml-2 text-gray-600">{product.stock} units</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                <span className="font-medium">Added:</span>
-                <span className="ml-2 text-gray-600">
-                  {new Date(product.createdAt).toLocaleDateString('id-ID')}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-xl">
+            <Star size={14} className="text-yellow-500 fill-yellow-500" />
+            <span className="text-xs font-bold text-yellow-700">4.5</span>
           </div>
         </div>
 
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div className="mt-16">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Related Products</h2>
-              <Link
-                to="/products"
-                className="text-blue-600 hover:text-blue-500 font-medium"
-              >
-                View All
-              </Link>
-            </div>
+        <div className="flex items-end gap-3 mb-8">
+          <span className="text-3xl md:text-5xl font-black text-blue-600">{Rupiah(product.price)}</span>
+          <span className="text-sm text-gray-400 font-medium mb-1.5 strike-through decoration-red-500">
+            {Rupiah(product.price * 1.2)}
+          </span>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <Link
-                  key={relatedProduct.id}
-                  to={`/products/${relatedProduct.id}`}
-                  className="bg-white rounded-lg shadow-md overflow-hidden border hover:shadow-lg transition duration-300 transform hover:-translate-y-1"
-                >
-                  <div className="h-48 overflow-hidden">
-                    <img
-                      src={relatedProduct.image}
-                      alt={relatedProduct.name}
-                      className="w-full h-full object-cover transition duration-300 hover:scale-105"
-                      onError={(e) => {
-                        e.target.src = "https://via.placeholder.com/300x200?text=No+Image"
-                      }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {relatedProduct.name}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {relatedProduct.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-green-600">
-                        {Rupiah(relatedProduct.price)}
-                      </span>
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {relatedProduct.category}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        <div className="mb-10">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Description</h3>
+          <p className="text-gray-500 leading-relaxed text-sm md:text-lg">{product.description}</p>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-10">
+          <div className="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+            <Truck size={20} className="text-blue-500 mb-2" />
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Shipping</p>
+            <p className="text-xs font-bold">Free delivery</p>
           </div>
-        )}
+          <div className="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+            <Shield size={20} className="text-green-500 mb-2" />
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Warranty</p>
+            <p className="text-xs font-bold">24 Months</p>
+          </div>
+        </div>
 
-        {/* Back Button */}
-        <div className="mt-12 text-center">
-          <Link
-            to="/products"
-            className="inline-flex items-center bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition duration-200 font-medium"
+        {/* Quantity */}
+        <div className="flex items-center justify-between mb-10 lg:w-1/3">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Quantity</h3>
+            <p className="text-[10px] text-gray-400 font-medium">{product.stock} units available</p>
+          </div>
+          <div className="flex items-center bg-gray-100 rounded-2xl p-1 gap-4">
+            <button
+              onClick={() => handleQuantityChange(-1)}
+              className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center font-bold text-blue-600 disabled:opacity-50"
+              disabled={quantity <= 1}
+            >-</button>
+            <span className="font-bold text-lg min-w-[20px] text-center">{quantity}</span>
+            <button
+              onClick={() => handleQuantityChange(1)}
+              className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center font-bold text-blue-600 disabled:opacity-50"
+              disabled={quantity >= product.stock}
+            >+</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Bottom Actions */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 md:pb-4 glass border-t border-white/20 z-50">
+        <div className="max-w-7xl mx-auto flex gap-4">
+          <button
+            onClick={addToCart}
+            disabled={product.stock === 0}
+            className="w-16 h-16 bg-blue-50 rounded-[24px] flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 active:scale-95 transition-transform disabled:opacity-50"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Products
-          </Link>
+            <ShoppingCart size={24} />
+          </button>
+          <button
+            disabled={product.stock === 0}
+            className="flex-1 bg-blue-600 text-white font-black rounded-[24px] shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {product.stock === 0 ? 'SOLD OUT' : 'BUY NOW'}
+          </button>
         </div>
       </div>
     </div>
   )
 }
+
 
 export default ProductDetail
